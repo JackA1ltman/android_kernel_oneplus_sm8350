@@ -404,6 +404,9 @@ int sysctl_sched_assist_enabled = 1;
 #endif
 int sysctl_sched_assist_scene = 0;
 #ifdef CONFIG_OPLUS_FEATURE_FRAME_BOOST
+
+int sysctl_ux_task_prefercpu_enable = 0;
+
 extern unsigned int sysctl_frame_boost_enable;
 extern unsigned int sysctl_frame_boost_debug;
 #endif
@@ -1738,6 +1741,13 @@ static struct ctl_table kern_table[] = {
 		.maxlen		= sizeof(int),
 		.mode		= 0666,
 		.proc_handler   = sysctl_sched_assist_scene_handler,
+	},
+	{
+		.procname	= "sched_assist_ux_task_prefercpu_enable",
+		.data		= &sysctl_ux_task_prefercpu_enable,
+		.maxlen		= sizeof(int),
+		.mode		= 0666,
+		.proc_handler   = proc_dointvec,
 	},
 #ifdef CONFIG_OPLUS_FEATURE_FRAME_BOOST
 	{

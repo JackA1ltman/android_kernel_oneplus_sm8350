@@ -239,6 +239,8 @@ extern int sysctl_input_boost_enabled;
 extern u64 sched_assist_input_boost_duration;
 #endif /* defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST) */
 
+extern int sysctl_ux_task_prefercpu_enable;
+
 #ifdef CONFIG_KSWAPD_UNBIND_MAX_CPU
 extern int kswapd_unbind_cpu;
 #endif
