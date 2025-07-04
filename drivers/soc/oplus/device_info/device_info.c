@@ -1045,4 +1045,4 @@ device_initcall(device_info_init);
 
 MODULE_DESCRIPTION("OPLUS device info");
 MODULE_LICENSE("GPL v2");
-MODULE_AUTHOR("Klus <Klus@oplus.com>");
+MODULE_AUTHOR("Klus");
