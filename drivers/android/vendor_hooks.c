@@ -28,6 +28,7 @@
 #include <trace/hooks/cgroup.h>
 #include <trace/hooks/sys.h>
 #include <trace/hooks/signal.h>
+#include <trace/hooks/mm.h>
 
 /*
  * Export tracepoints that act as a bare tracehook (ie: have no trace event
@@ -82,6 +83,7 @@ EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_set_inactive_ratio);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_check_throttle);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ufs_gen_proc_devinfo);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_ufs_latency_hist);
+EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_ctl_dirty_rate);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_vh_check_dhcp_pkt);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_check_preempt_wakeup);
 EXPORT_TRACEPOINT_SYMBOL_GPL(android_rvh_check_preempt_tick);
