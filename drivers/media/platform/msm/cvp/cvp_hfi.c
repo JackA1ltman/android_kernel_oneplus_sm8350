@@ -807,11 +807,11 @@ static int __read_queue(struct cvp_iface_q_info *qinfo, u8 *packet,
 					(u8 *)qinfo->q_array.align_virtual_addr,
 					new_read_idx << 2);
 		}
-        /*
-         * Copy back the validated size to avoid security issue. As we are reading
-         * the packet from a shared queue, there is a possibility to get the
-         * packet->size data corrupted of shared queue by mallicious FW.
-         */
+		/*
+		 * Copy back the validated size to avoid security issue. As we are reading
+		 * the packet from a shared queue, there is a possibility to get the
+		 * packet->size data corrupted of shared queue by mallicious FW.
+		 */
 		*((u32 *) packet) = packet_size_in_words << 2;
 	} else {
 		dprintk(CVP_WARN,
@@ -4760,4 +4760,3 @@ int cvp_iris_hfi_initialize(struct cvp_hfi_device *hdev, u32 device_id,
 err_iris_hfi_init:
 	return rc;
 }
-

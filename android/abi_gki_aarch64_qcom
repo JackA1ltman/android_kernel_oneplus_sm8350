@@ -1372,6 +1372,7 @@
   kthread_stop
   kthread_unpark
   kthread_worker_fn
+  ktime_add_safe
   ktime_get
   ktime_get_mono_fast_ns
   ktime_get_real_seconds
@@ -1868,6 +1869,7 @@
   proc_set_user
   proto_register
   proto_unregister
+  __pskb_copy_fclone
   pskb_expand_head
   __pskb_pull_tail
   ___pskb_trim
@@ -2061,6 +2063,7 @@
   rpmsg_set_signals
   rpmsg_trysend
   rpmsg_unregister_device
+  rpmsg_register_device_override
   rtc_add_group
   rtc_class_close
   rtc_class_open
@@ -2253,6 +2256,7 @@
   snd_card_free_when_closed
   snd_card_new
   snd_card_register
+  snd_compr_use_pause_in_draining
   snd_ctl_add
   snd_ctl_boolean_mono_info
   snd_ctl_enum_info
@@ -2281,6 +2285,7 @@
   snd_pcm_stop
   _snd_pcm_stream_lock_irqsave
   snd_pcm_stream_unlock_irqrestore
+  snd_soc_add_card_controls
   snd_soc_add_component_controls
   snd_soc_bytes_tlv_callback
   snd_soc_card_get_kcontrol
@@ -2419,6 +2424,7 @@
   strrchr
   strreplace
   strscpy
+  strscpy_pad
   strsep
   strstr
   __sw_hweight32
@@ -2560,6 +2566,7 @@
   ufshcd_remove
   ufshcd_uic_hibern8_enter
   ufshcd_uic_hibern8_exit
+  uhid_hid_driver
   __uio_register_device
   uhid_hid_driver
   uio_unregister_device
@@ -2680,6 +2687,7 @@
   usb_hcd_resume_root_hub
   usb_hcd_start_port_resume
   usb_hcd_unlink_urb_from_ep
+  usb_hcd_unmap_urb_for_dma
   usb_hub_clear_tt_buffer
   usb_hub_find_child
   usb_ifnum_to_if

@@ -526,4 +526,3 @@ void icnss_add_fw_prefix_name(struct icnss_priv *priv, char *prefix_name,
 			      char *name);
 void icnss_recovery_timeout_hdlr(struct timer_list *t);
 #endif
-

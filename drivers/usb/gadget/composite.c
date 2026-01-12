@@ -174,21 +174,21 @@ int config_ep_by_speed_and_alt(struct usb_gadget *g,
 	/* select desired speed */
 	switch (g->speed) {
 	case USB_SPEED_SUPER_PLUS:
-		if (gadget_is_superspeed_plus(g) && f->ssp_descriptors != NULL) {
+		if (gadget_is_superspeed_plus(g)) {
 			speed_desc = f->ssp_descriptors;
 			want_comp_desc = 1;
 			break;
 		}
 		/* fall through */
 	case USB_SPEED_SUPER:
-		if (gadget_is_superspeed(g) && f->ss_descriptors != NULL) {
+		if (gadget_is_superspeed(g)) {
 			speed_desc = f->ss_descriptors;
 			want_comp_desc = 1;
 			break;
 		}
 		/* fall through */
 	case USB_SPEED_HIGH:
-		if (gadget_is_dualspeed(g) && f->hs_descriptors != NULL) {
+		if (gadget_is_dualspeed(g)) {
 			speed_desc = f->hs_descriptors;
 			break;
 		}
@@ -899,7 +899,7 @@ static int set_config(struct usb_composite_dev *cdev,
 		goto done;
 
 #ifdef CONFIG_QGKI_MSM_BOOT_TIME_MARKER
-	place_marker("M - USB Device is enumerated");
+	update_marker("M - USB device is enumerated");
 #endif
 	usb_gadget_set_state(gadget, USB_STATE_CONFIGURED);
 	cdev->config = c;
@@ -1703,14 +1703,14 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 	u8				endp;
 
 	if (w_length > USB_COMP_EP0_BUFSIZ) {
-		if (ctrl->bRequestType == USB_DIR_OUT) {
-			goto done;
-		} else {
+		if (ctrl->bRequestType & USB_DIR_IN) {
 			/* Cast away the const, we are going to overwrite on purpose. */
 			__le16 *temp = (__le16 *)&ctrl->wLength;
 
 			*temp = cpu_to_le16(USB_COMP_EP0_BUFSIZ);
 			w_length = USB_COMP_EP0_BUFSIZ;
+		} else {
+			goto done;
 		}
 	}
 
@@ -2004,6 +2004,18 @@ unknown:
 			memset(buf, 0, w_length);
 			buf[5] = 0x01;
 			switch (ctrl->bRequestType & USB_RECIP_MASK) {
+			/*
+			 * The Microsoft CompatID OS Descriptor Spec(w_index = 0x4) and
+			 * Extended Prop OS Desc Spec(w_index = 0x5) state that the
+			 * HighByte of wValue is the InterfaceNumber and the LowByte is
+			 * the PageNumber. This high/low byte ordering is incorrectly
+			 * documented in the Spec. USB analyzer output on the below
+			 * request packets show the high/low byte inverted i.e LowByte
+			 * is the InterfaceNumber and the HighByte is the PageNumber.
+			 * Since we dont support >64KB CompatID/ExtendedProp descriptors,
+			 * PageNumber is set to 0. Hence verify that the HighByte is 0
+			 * for below two cases.
+			 */
 			case USB_RECIP_DEVICE:
 				if (w_index != 0x4 || (w_value >> 8))
 					break;
@@ -2031,7 +2043,7 @@ unknown:
 					break;
 				interface = w_value & 0xFF;
 				if (interface >= MAX_CONFIG_INTERFACES ||
-					!os_desc_cfg->interface[interface])
+				    !os_desc_cfg->interface[interface])
 					break;
 				buf[6] = w_index;
 				count = count_ext_prop(os_desc_cfg,
@@ -2462,7 +2474,7 @@ void composite_resume(struct usb_gadget *gadget)
 	 */
 	INFO(cdev, "USB Resume end\n");
 #ifdef CONFIG_QGKI_MSM_BOOT_TIME_MARKER
-	place_marker("M - USB Device is resumed");
+	update_marker("M - USB device is resumed");
 #endif
 	if (cdev->driver->resume)
 		cdev->driver->resume(cdev);

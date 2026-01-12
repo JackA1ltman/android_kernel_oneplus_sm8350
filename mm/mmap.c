@@ -23,6 +23,7 @@
 #include <linux/init.h>
 #include <linux/file.h>
 #include <linux/fs.h>
+#include <linux/pgsize_migration.h>
 #include <linux/personality.h>
 #include <linux/security.h>
 #include <linux/hugetlb.h>
@@ -1087,6 +1088,8 @@ static inline int is_mergeable_vma(struct vm_area_struct *vma,
 	if (!is_mergeable_vm_userfaultfd_ctx(vma, vm_userfaultfd_ctx))
 		return 0;
 	if (vma_get_anon_name(vma) != anon_name)
+		return 0;
+	if (!is_mergable_pad_vma(vma, vm_flags))
 		return 0;
 	return 1;
 }
@@ -2380,8 +2383,22 @@ struct vm_area_struct *get_vma(struct mm_struct *mm, unsigned long addr)
 
 	read_lock(&mm->mm_rb_lock);
 	vma = __find_vma(mm, addr);
-	if (vma)
-		atomic_inc(&vma->vm_ref_count);
+
+	/*
+	 * If there is a concurrent fast mremap, bail out since the entire
+	 * PMD/PUD subtree may have been remapped.
+	 *
+	 * This is usually safe for conventional mremap since it takes the
+	 * PTE locks as does SPF. However fast mremap only takes the lock
+	 * at the PMD/PUD level which is ok as it is done with the mmap
+	 * write lock held. But since SPF, as the term implies forgoes,
+	 * taking the mmap read lock and also cannot take PTL lock at the
+	 * larger PMD/PUD granualrity, since it would introduce huge
+	 * contention in the page fault path; fall back to regular fault
+	 * handling.
+	 */
+	if (vma && !atomic_inc_unless_negative(&vma->vm_ref_count))
+		vma = NULL;
 	read_unlock(&mm->mm_rb_lock);
 
 	return vma;
@@ -2856,8 +2873,10 @@ int __split_vma(struct mm_struct *mm, struct vm_area_struct *vma,
 		err = vma_adjust(vma, vma->vm_start, addr, vma->vm_pgoff, new);
 
 	/* Success. */
-	if (!err)
+	if (!err) {
+		split_pad_vma(vma, new, addr, new_below);
 		return 0;
+	}
 
 	/* Clean everything up if vma_adjust failed. */
 	if (new->vm_ops && new->vm_ops->close)
@@ -3286,10 +3305,9 @@ void exit_mmap(struct mm_struct *mm)
 		(void)__oom_reap_task_mm(mm);
 
 		set_bit(MMF_OOM_SKIP, &mm->flags);
-		down_write(&mm->mmap_sem);
-		up_write(&mm->mmap_sem);
 	}
 
+	down_write(&mm->mmap_sem);
 	if (mm->locked_vm) {
 		vma = mm->mmap;
 		while (vma) {
@@ -3302,8 +3320,11 @@ void exit_mmap(struct mm_struct *mm)
 	arch_exit_mmap(mm);
 
 	vma = mm->mmap;
-	if (!vma)	/* Can happen if dup_mmap() received an OOM */
+	if (!vma) {
+		/* Can happen if dup_mmap() received an OOM */
+		up_write(&mm->mmap_sem);;
 		return;
+	}
 
 	lru_add_drain();
 	flush_cache_mm(mm);
@@ -3314,16 +3335,14 @@ void exit_mmap(struct mm_struct *mm)
 	free_pgtables(&tlb, vma, FIRST_USER_ADDRESS, USER_PGTABLES_CEILING);
 	tlb_finish_mmu(&tlb, 0, -1);
 
-	/*
-	 * Walk the list again, actually closing and freeing it,
-	 * with preemption enabled, without holding any MM locks.
-	 */
+	/* Walk the list again, actually closing and freeing it. */
 	while (vma) {
 		if (vma->vm_flags & VM_ACCOUNT)
 			nr_accounted += vma_pages(vma);
 		vma = remove_vma(vma);
 		cond_resched();
 	}
+	up_write(&mm->mmap_sem);
 	vm_unacct_memory(nr_accounted);
 }
 

@@ -900,7 +900,7 @@ static int adjust_bw_freqs(void)
 	cvp_max_rate = tbl[tbl_size - 1].clock_rate;
 	bus = &core->resources.bus_set.bus_tbl[1];
 	max_bw = bus->range[1];
-	min_bw = max_bw/10;
+	min_bw = max_bw/100;
 
 	aggregate_power_update(core, &nrt_pwr, &rt_pwr, cvp_max_rate);
 	dprintk(CVP_PROF, "PwrUpdate nrt %u %u %lld rt %u %u %lld\n",

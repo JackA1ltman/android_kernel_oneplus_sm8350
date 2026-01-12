@@ -1641,7 +1641,7 @@ vm_fault_t do_huge_pmd_numa_page(struct vm_fault *vmf, pmd_t pmd)
 	 */
 	get_page(page);
 	spin_unlock(vmf->ptl);
-	anon_vma = page_lock_anon_vma_read(page);
+	anon_vma = page_lock_anon_vma_read(page, NULL);
 
 	/* Confirm the PMD did not change while page_table_lock was released */
 	spin_lock(vmf->ptl);
@@ -2369,7 +2369,7 @@ void __split_huge_pmd(struct vm_area_struct *vma, pmd_t *pmd,
 	VM_BUG_ON(freeze && !page);
 	if (page) {
 		VM_WARN_ON_ONCE(!PageLocked(page));
-		if (page != pmd_page(*pmd))
+		if (is_pmd_migration_entry(*pmd) || page != pmd_page(*pmd))
 			goto out;
 	}
 

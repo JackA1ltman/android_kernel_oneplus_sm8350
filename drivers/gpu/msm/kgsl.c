@@ -319,11 +319,6 @@ static void add_dmabuf_list(struct kgsl_dma_buf_meta *meta)
 
 	/* This is a new buffer. Add a new entry for it */
 	dle = kzalloc(sizeof(*dle), GFP_ATOMIC);
-	if (dle == NULL) {
-		pr_info("[QCOM debug] %s retry once with GFP_KERNEL\n", __func__);
-		dle = kzalloc(sizeof(*dle), GFP_KERNEL);
-	}
-
 	if (dle) {
 		dle->firstpage = page;
 		INIT_LIST_HEAD(&dle->dmabuf_list);
@@ -805,7 +800,8 @@ int kgsl_context_init(struct kgsl_device_private *dev_priv,
 		 * flushing the event workqueue just in case there are
 		 * detached contexts waiting to finish
 		 */
-		kthread_flush_worker(&kgsl_driver.ev_worker);
+
+		flush_workqueue(device->events_wq);
 		id = _kgsl_get_context_id(device);
 	}
 
@@ -2366,7 +2362,7 @@ static void gpumem_free_func(struct kgsl_device *device,
 			entry->memdesc.gpuaddr, entry->memdesc.size,
 			entry->memdesc.flags);
 
-	kgsl_mem_entry_put_deferred(entry);
+	kgsl_mem_entry_put(entry);
 }
 
 static long gpumem_free_entry_on_timestamp(struct kgsl_device *device,
@@ -4311,7 +4307,7 @@ kgsl_get_unmapped_area(struct file *file, unsigned long addr,
 					       (int) val);
 	}
 
-        kgsl_mem_entry_put(entry);
+	kgsl_mem_entry_put(entry);
 	return val;
 }
 
@@ -4639,16 +4635,25 @@ int kgsl_device_platform_probe(struct kgsl_device *device)
 	device->pwrctrl.interrupt_num = status;
 	disable_irq(device->pwrctrl.interrupt_num);
 
-	rwlock_init(&device->context_lock);
-	spin_lock_init(&device->submit_lock);
+	device->events_wq = alloc_workqueue("kgsl-events",
+		WQ_UNBOUND | WQ_MEM_RECLAIM | WQ_SYSFS | WQ_HIGHPRI, 0);
 
-	idr_init(&device->timelines);
-	spin_lock_init(&device->timelines_lock);
+	if (!device->events_wq) {
+		dev_err(device->dev, "Failed to allocate events workqueue\n");
+		status = -ENOMEM;
+		goto error_pwrctrl_close;
+	}
 
 	/* This can return -EPROBE_DEFER */
 	status = kgsl_mmu_probe(device);
 	if (status != 0)
 		goto error_pwrctrl_close;
+
+	rwlock_init(&device->context_lock);
+	spin_lock_init(&device->submit_lock);
+
+	idr_init(&device->timelines);
+	spin_lock_init(&device->timelines_lock);
 
 	kgsl_device_debugfs_init(device);
 
@@ -4663,6 +4668,11 @@ int kgsl_device_platform_probe(struct kgsl_device *device)
 	return 0;
 
 error_pwrctrl_close:
+	if (device->events_wq) {
+		destroy_workqueue(device->events_wq);
+		device->events_wq = NULL;
+	}
+
 	kgsl_pwrctrl_close(device);
 error:
 	_unregister_device(device);
@@ -4671,6 +4681,11 @@ error:
 
 void kgsl_device_platform_remove(struct kgsl_device *device)
 {
+	if (device->events_wq) {
+		destroy_workqueue(device->events_wq);
+		device->events_wq = NULL;
+	}
+
 	kgsl_device_snapshot_close(device);
 
 	idr_destroy(&device->context_idr);
@@ -4742,7 +4757,6 @@ int __init kgsl_core_init(void)
 {
 	int result = 0;
 	struct sched_param param = { .sched_priority = 2 };
-	struct sched_param param2 = { .sched_priority = 97 };
 
 	place_marker("M - DRIVER KGSL Init");
 
@@ -4829,17 +4843,6 @@ int __init kgsl_core_init(void)
 
 	kthread_init_worker(&kgsl_driver.worker);
 
-	kthread_init_worker(&kgsl_driver.ev_worker);
-
-	kgsl_driver.ev_worker_thread =
-		kthread_run(kthread_worker_fn, &kgsl_driver.ev_worker,
-			    "kgsl_ev_worker_thread");
-
-	if (IS_ERR(kgsl_driver.ev_worker_thread)) {
-		pr_err("unable to start kgsl_ev_worker_thread\n");
-		goto err;
-	}
-
 	kgsl_driver.worker_thread = kthread_run(kthread_worker_fn,
 		&kgsl_driver.worker, "kgsl_worker_thread");
 
@@ -4849,8 +4852,6 @@ int __init kgsl_core_init(void)
 	}
 
 	sched_setscheduler(kgsl_driver.worker_thread, SCHED_FIFO, &param);
-	sched_setscheduler_nocheck(kgsl_driver.ev_worker_thread, SCHED_FIFO,
-				   &param2);
 
 #if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_ASSIST)
 	kgsl_driver.worker_thread->ux_state = SA_TYPE_LIGHT;

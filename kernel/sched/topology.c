@@ -1209,16 +1209,13 @@ static void set_domain_attribute(struct sched_domain *sd,
 	if (!attr || attr->relax_domain_level < 0) {
 		if (default_relax_domain_level < 0)
 			return;
-		else
-			request = default_relax_domain_level;
+		request = default_relax_domain_level;
 	} else
 		request = attr->relax_domain_level;
-	if (request < sd->level) {
+
+	if (sd->level >= request) {
 		/* Turn off idle balance on this domain: */
 		sd->flags &= ~(SD_BALANCE_WAKE|SD_BALANCE_NEWIDLE);
-	} else {
-		/* Turn on idle balance on this domain: */
-		sd->flags |= (SD_BALANCE_WAKE|SD_BALANCE_NEWIDLE);
 	}
 }
 
@@ -2092,7 +2089,7 @@ build_sched_domains(const struct cpumask *cpu_map, struct sched_domain_attr *att
 	if (d.rd->wrd.max_cap_orig_cpu != -1) {
 		d.rd->max_cpu_capacity.cpu = d.rd->wrd.max_cap_orig_cpu;
 		d.rd->max_cpu_capacity.val = arch_scale_cpu_capacity(
-				d.rd->wrd.max_cap_orig_cpu);
+						d.rd->wrd.max_cap_orig_cpu);
 
 #ifdef CONFIG_KSWAPD_UNBIND_MAX_CPU
 		kswapd_unbind_cpu = d.rd->max_cpu_capacity.cpu;

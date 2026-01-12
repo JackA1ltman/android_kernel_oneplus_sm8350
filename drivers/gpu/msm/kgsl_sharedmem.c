@@ -923,7 +923,6 @@ void kgsl_get_memory_usage(char *name, size_t name_size, uint64_t memflags)
 {
 	unsigned int type = MEMFLAGS(memflags, KGSL_MEMTYPE_MASK,
 		KGSL_MEMTYPE_SHIFT);
-
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(memtypes); i++) {

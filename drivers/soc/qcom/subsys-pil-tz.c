@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2020 Oplus. All rights reserved.
  */
 
@@ -1002,6 +1002,10 @@ static int subsys_ramdump(int enable, const struct subsys_desc *subsys)
 
 	if (!enable)
 		return 0;
+#ifdef CONFIG_QGKI_MSM_BOOT_TIME_MARKER
+	if (!strcmp(subsys->name, "modem"))
+		update_marker("M - Modem Dump start");
+#endif
 
 	return pil_do_ramdump(&d->desc, d->ramdump_dev, d->minidump_dev);
 }
@@ -1046,6 +1050,10 @@ static irqreturn_t subsys_err_fatal_intr_handler (int irq, void *drv_data)
 							d->subsys_desc.name);
 		return IRQ_HANDLED;
 	}
+#ifdef CONFIG_QGKI_MSM_BOOT_TIME_MARKER
+	if (!strcmp(d->subsys_desc.name, "modem"))
+		update_marker("M - Modem crash");
+#endif
 	subsys_set_crash_status(d->subsys, CRASH_STATUS_ERR_FATAL);
 	log_failure_reason(d);
 	subsystem_restart_dev(d->subsys);

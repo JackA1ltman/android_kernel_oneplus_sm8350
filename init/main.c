@@ -663,6 +663,7 @@ asmlinkage __visible void __init start_kernel(void)
 		phx_set_boot_stage(KERNEL_MM_INIT_DONE);
 #endif //OPLUS_FEATURE_PHOENIX
 
+	poking_init();
 	ftrace_init();
 
 	/* trace_printk can be enabled here */

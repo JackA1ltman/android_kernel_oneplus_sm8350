@@ -1017,4 +1017,3 @@ config OPLUS_DYNAMIC_READAHEAD
 	default n
 	help
 	  This feature dynamically set read-ahead size for performance.
-

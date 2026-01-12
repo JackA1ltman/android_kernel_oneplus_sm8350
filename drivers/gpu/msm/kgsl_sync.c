@@ -447,11 +447,6 @@ static void kgsl_get_fence_names(struct dma_fence *fence,
 
 	info_ptr->fences = kcalloc(num_fences, sizeof(struct fence_info),
 			GFP_ATOMIC);
-	if (info_ptr->fences == NULL) {
-		pr_info("[QCOM debug] %s retry once again\n", __func__);
-		info_ptr->fences = kcalloc(num_fences, sizeof(struct fence_info),
-			GFP_KERNEL);
-	}
 	if (info_ptr->fences == NULL)
 		return;
 
@@ -488,11 +483,6 @@ struct kgsl_sync_fence_cb *kgsl_sync_fence_async_wait(int fd,
 
 	/* create the callback */
 	kcb = kzalloc(sizeof(*kcb), GFP_ATOMIC);
-	if (kcb == NULL) {
-		pr_info("[QCOM debug] %s retry once with GFP_KERNEL\n", __func__);
-		kcb = kzalloc(sizeof(*kcb), GFP_KERNEL);
-	}
-
 	if (kcb == NULL) {
 		dma_fence_put(fence);
 		return ERR_PTR(-ENOMEM);
@@ -891,4 +881,3 @@ static const struct dma_fence_ops kgsl_syncsource_fence_ops = {
 
 	.fence_value_str = kgsl_syncsource_fence_value_str,
 };
-

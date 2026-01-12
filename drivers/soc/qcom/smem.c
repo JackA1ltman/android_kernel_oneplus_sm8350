@@ -592,8 +592,7 @@ static void *qcom_smem_get_private(struct qcom_smem *smem,
 
 			item_ptr =  uncached_entry_to_item(e);
 
-			if (WARN_ON(!IN_PARTITION_RANGE(item_ptr, entry_size, e,
-								uncached_end)))
+			if (WARN_ON(!IN_PARTITION_RANGE(item_ptr, entry_size, e, uncached_end)))
 				return ERR_PTR(-EINVAL);
 
 			if (size != NULL)
@@ -636,8 +635,7 @@ static void *qcom_smem_get_private(struct qcom_smem *smem,
 				return ERR_PTR(-EINVAL);
 
 			item_ptr =  cached_entry_to_item(e);
-			if (WARN_ON(!IN_PARTITION_RANGE(item_ptr, entry_size,
-							cached_end, e)))
+			if (WARN_ON(!IN_PARTITION_RANGE(item_ptr, entry_size, cached_end, e)))
 				return ERR_PTR(-EINVAL);
 
 			if (size != NULL)

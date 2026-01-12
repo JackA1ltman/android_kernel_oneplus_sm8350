@@ -2,9 +2,6 @@
 /*
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
  */
 
 /*
@@ -526,6 +523,7 @@ static int drawobj_add_sync_timeline(struct kgsl_device *device,
 			dma_fence_put(event->fence);
 			ret = 0;
 		}
+
 		/* Put the refcount from fence creation */
 		dma_fence_put(event->fence);
 		kgsl_drawobj_put(drawobj);
